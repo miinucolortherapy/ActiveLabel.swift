@@ -196,11 +196,10 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             let characterRange = NSRange(linkRange, in: text)
             let boundRect = self.boundingRectangle(forCharacterRange: characterRange)
             let correctBoundRect = CGRect(x: boundRect.minX, y: boundRect.minY + self.heightCorrection, width: boundRect.width, height: boundRect.height)
-            guard correctBoundRect.contains(touchPoint) else {
-                continue
+            if correctBoundRect.contains(touchPoint) {
+                self.highlightLink(range: characterRange)
+                return correctBoundRect
             }
-            self.highlightLink(range: characterRange)
-            return correctBoundRect
         }
         return nil
     }
@@ -640,7 +639,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     }
     
     override open var canBecomeFirstResponder: Bool {
-        return true
+        return self.isCopyLinksEnable
     }
     
     override open func copy(_ sender: Any?) {
