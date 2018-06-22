@@ -27,8 +27,8 @@ class ViewController: UIViewController {
         label.urlMaximumLength = 31
 
         label.customize { label in
-            label.text = "This is a post with #multiple #hashtags and a @userhandle. Links are also supported like" +
-            " this one: http://optonaut.co. Now it also supports custom patterns -> are\n\n" +
+            label.text = "This is a 🚂 post with #multiple #hashtags and 😱 a @userhandle. Links are also google.com supported like" +
+            " this one: HTTPS://optonaut.co. Now it also supports custom patterns -> are\n\n" +
                 "Let's trim a long link: \nhttps://twitter.com/twicket_app/status/649678392372121601"
             label.numberOfLines = 0
             label.lineSpacing = 4
@@ -42,7 +42,8 @@ class ViewController: UIViewController {
             label.handleMentionTap { self.alert("Mention", message: $0) }
             label.handleHashtagTap { self.alert("Hashtag", message: $0) }
             label.handleURLTap { self.alert("URL", message: $0.absoluteString) }
-
+            
+            label.isCopyLinksEnable = true
             //Custom types
 
             label.customColor[customType] = UIColor.purple
