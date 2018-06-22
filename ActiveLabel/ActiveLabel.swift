@@ -11,7 +11,7 @@ import UIKit
 
 public protocol ActiveLabelDelegate: class {
     func didSelect(_ text: String, type: ActiveType)
-    func didLongPressWithURL(_ url: URL!, touchPoint: CGPoint)
+    func didLongPressWithURL(_ url: URL, touchPoint: CGPoint)
 }
 
 public typealias ConfigureLinkAttribute = (ActiveType, [NSAttributedStringKey : Any], Bool) -> ([NSAttributedStringKey : Any])
@@ -28,7 +28,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     
     open var configureLinkAttribute: ConfigureLinkAttribute?
     
-    open var copyLinksActive: Bool = false
+    open var copyLinksActive = false
 
     @IBInspectable open var mentionColor: UIColor = .blue {
         didSet { updateTextStorage(parseText: false) }
@@ -156,38 +156,36 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     
     @objc private func longPress(_ sender: UILongPressGestureRecognizer) {
         let location = sender.location(in: sender.view)
-        if let element = element(at: location) {
-            switch element.element {
-            case .mention(let userHandle):
-                guard let url = URL(string: "@" + userHandle) else {
-                    return
-                }
-                self.processLink(url, touchPoint: location, sender: sender)
-            case .hashtag(let hashtag):
-                guard let url = URL(string: "#" + hashtag) else {
-                    return
-                }
-                self.processLink(url, touchPoint: location, sender: sender)
-            case .url(let originalURL, _):
-                guard let url = URL(string: originalURL) else {
-                    return
-                }
-                self.processLink(url, touchPoint: location, sender: sender)
-            case .custom(_):
-                break
-            }
+        guard let element = self.element(at: location) else {
+            return
         }
+        var link: URL? = nil
+        switch element.element {
+        case .mention(let userHandle):
+            link = URL(string: "@" + userHandle)
+        case .hashtag(let hashtag):
+            link = URL(string: "#" + hashtag)
+        case .url(let originalURL, _):
+            link = URL(string: originalURL)
+        case .custom(_):
+            break
+        }
+        guard let url = link else {
+            return
+        }
+        self.processLink(url, touchPoint: location, sender: sender)
     }
 
-    private func processLink(_ url: URL!, touchPoint: CGPoint, sender: UILongPressGestureRecognizer) {
+    private func processLink(_ url: URL, touchPoint: CGPoint, sender: UILongPressGestureRecognizer) {
         self.delegate?.didLongPressWithURL(url, touchPoint: touchPoint)
         guard self.copyLinksActive,
             let rect = self.selectedLinkRectangle(link: url.description, touchPoint: touchPoint),
-            self.lastCopyMenuRect != rect else {
+            self.lastCopyMenuRect != rect,
+            let responder = sender.view else {
             return
         }
         self.lastCopyMenuRect = rect
-        self.showCopyMenu(rect: rect, sender: sender)
+        self.showCopyMenu(rect: rect, responder: responder)
         self.copyLink = url.description
     }
     
@@ -195,10 +193,10 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         guard let text = self.text else {
             return nil
         }
-        let linkRanges = self.processLinkRanges(text: text, link: link)
+        let linkRanges = self.linkRanges(text: text, link: link)
         for linkRange in linkRanges {
             let characterRange = NSRange(linkRange, in: text)
-            let boundRect = processBoundRect(forCharacterRange: characterRange)
+            let boundRect = boundingRectangle(forCharacterRange: characterRange)
             let correctBoundRect = CGRect(x: boundRect.minX, y: boundRect.minY + self.heightCorrection, width: boundRect.width, height: boundRect.height)
             guard !correctBoundRect.contains(touchPoint) else {
                 self.highlightLink(range: characterRange)
@@ -208,7 +206,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         return nil
     }
     
-    private func processLinkRanges(text: String, link: String) -> [Range<String.Index>] {
+    private func linkRanges(text: String, link: String) -> [Range<String.Index>] {
         var correctLink = link
         if let maxLength = self.urlMaximumLength,
             correctLink.count > maxLength {
@@ -227,15 +225,15 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         return linkRanges
     }
     
-    private func processBoundRect(forCharacterRange range: NSRange) -> CGRect {
+    private func boundingRectangle(forCharacterRange range: NSRange) -> CGRect {
         var glyphRange = NSRange(location: 0, length: textStorage.length)
         self.layoutManager.characterRange(forGlyphRange: range, actualGlyphRange: &glyphRange)
         let boundingRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
         return boundingRect
     }
     
-    private func showCopyMenu(rect: CGRect, sender: UILongPressGestureRecognizer) {
-        guard let responder = sender.view, responder.becomeFirstResponder() else {
+    private func showCopyMenu(rect: CGRect, responder: UIView) {
+        guard responder.becomeFirstResponder() else {
             self.copyLink = nil
             return
         }
@@ -253,12 +251,12 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     private func highlightLink(range: NSRange) {
         self.textStorage.removeAttribute(.backgroundColor, range: NSRange(location: 0, length: self.textStorage.length))
         self.textStorage.addAttribute(.backgroundColor, value: self.highlightColor, range: range)
-        setNeedsDisplay()
+        self.setNeedsDisplay()
     }
     
     @objc private func resetHighlight() {
         self.textStorage.removeAttribute(.backgroundColor, range: NSRange(location: 0, length: self.textStorage.length))
-        setNeedsDisplay()
+        self.setNeedsDisplay()
     }
 
     // MARK: - init functions
