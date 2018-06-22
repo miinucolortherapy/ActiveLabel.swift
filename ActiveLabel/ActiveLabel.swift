@@ -28,7 +28,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     
     open var configureLinkAttribute: ConfigureLinkAttribute?
     
-    open var copyLinksActive = false
+    open var isCopyLinksEnable = false
 
     @IBInspectable open var mentionColor: UIColor = .blue {
         didSet { updateTextStorage(parseText: false) }
@@ -74,10 +74,9 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     }
     
     private let menuController = UIMenuController.shared
-    private let longPressGesture = UILongPressGestureRecognizer()
     private let highlightColor = UIColor(red: 229.0 / 255.0, green: 229.0 / 255.0, blue: 254.0 / 255.0, alpha: 0.7)
     private var lastCopyMenuRect: CGRect = .zero
-    private var copyLink: String? = nil
+    private var copyLink: String?
 
     // MARK: - public methods
     open func handleMentionTap(_ handler: @escaping (String) -> ()) {
@@ -149,9 +148,9 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     }
 
     private func setupLongPressGesture() {
-        self.longPressGesture.minimumPressDuration = 0.5
-        self.longPressGesture.addTarget(self, action: #selector(self.longPress(_:)))
-        self.addGestureRecognizer(self.longPressGesture)
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(longPress(_:)))
+        longPressGesture.minimumPressDuration = 0.5
+        self.addGestureRecognizer(longPressGesture)
     }
     
     @objc private func longPress(_ sender: UILongPressGestureRecognizer) {
@@ -159,7 +158,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         guard let element = self.element(at: location) else {
             return
         }
-        var link: URL? = nil
+        var link: URL?
         switch element.element {
         case .mention(let userHandle):
             link = URL(string: "@" + userHandle)
@@ -173,19 +172,18 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         guard let url = link else {
             return
         }
-        self.processLink(url, touchPoint: location, sender: sender)
+        self.processLink(url, touchPoint: location)
     }
 
-    private func processLink(_ url: URL, touchPoint: CGPoint, sender: UILongPressGestureRecognizer) {
+    private func processLink(_ url: URL, touchPoint: CGPoint) {
         self.delegate?.didLongPressWithURL(url, touchPoint: touchPoint)
-        guard self.copyLinksActive,
+        guard self.isCopyLinksEnable,
             let rect = self.selectedLinkRectangle(link: url.description, touchPoint: touchPoint),
-            self.lastCopyMenuRect != rect,
-            let responder = sender.view else {
+            self.lastCopyMenuRect != rect else {
             return
         }
         self.lastCopyMenuRect = rect
-        self.showCopyMenu(rect: rect, responder: responder)
+        self.showCopyMenu(rect: rect)
         self.copyLink = url.description
     }
     
@@ -196,12 +194,13 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         let linkRanges = self.linkRanges(text: text, link: link)
         for linkRange in linkRanges {
             let characterRange = NSRange(linkRange, in: text)
-            let boundRect = boundingRectangle(forCharacterRange: characterRange)
+            let boundRect = self.boundingRectangle(forCharacterRange: characterRange)
             let correctBoundRect = CGRect(x: boundRect.minX, y: boundRect.minY + self.heightCorrection, width: boundRect.width, height: boundRect.height)
-            guard !correctBoundRect.contains(touchPoint) else {
-                self.highlightLink(range: characterRange)
-                return correctBoundRect
+            guard correctBoundRect.contains(touchPoint) else {
+                continue
             }
+            self.highlightLink(range: characterRange)
+            return correctBoundRect
         }
         return nil
     }
@@ -226,19 +225,19 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     }
     
     private func boundingRectangle(forCharacterRange range: NSRange) -> CGRect {
-        var glyphRange = NSRange(location: 0, length: textStorage.length)
+        var glyphRange = NSRange(location: 0, length: self.textStorage.length)
         self.layoutManager.characterRange(forGlyphRange: range, actualGlyphRange: &glyphRange)
         let boundingRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
         return boundingRect
     }
     
-    private func showCopyMenu(rect: CGRect, responder: UIView) {
-        guard responder.becomeFirstResponder() else {
+    private func showCopyMenu(rect: CGRect) {
+        guard self.becomeFirstResponder() else {
             self.copyLink = nil
             return
         }
         self.menuController.arrowDirection = .default
-        self.menuController.setTargetRect(rect, in: responder)
+        self.menuController.setTargetRect(rect, in: self)
         self.menuController.setMenuVisible(true, animated: true)
     }
     
@@ -608,7 +607,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
 
     //MARK: - ActiveLabel handler
     fileprivate func didTapMention(_ username: String) {
-        guard let mentionHandler = mentionTapHandler else {
+        guard let mentionHandler = self.mentionTapHandler else {
             delegate?.didSelect(username, type: .mention)
             return
         }
@@ -616,7 +615,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     }
 
     fileprivate func didTapHashtag(_ hashtag: String) {
-        guard let hashtagHandler = hashtagTapHandler else {
+        guard let hashtagHandler = self.hashtagTapHandler else {
             delegate?.didSelect(hashtag, type: .hashtag)
             return
         }
@@ -624,7 +623,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     }
 
     fileprivate func didTapStringURL(_ stringURL: String) {
-        guard let urlHandler = urlTapHandler, let url = URL(string: stringURL) else {
+        guard let urlHandler = self.urlTapHandler, let url = URL(string: stringURL) else {
             delegate?.didSelect(stringURL, type: .url)
             return
         }
