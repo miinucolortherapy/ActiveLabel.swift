@@ -239,6 +239,13 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         self.menuController.arrowDirection = .default
         self.menuController.setTargetRect(rect, in: self)
         self.menuController.setMenuVisible(true, animated: true)
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.resetHighlight),
+            name: .UIMenuControllerDidHideMenu,
+            object: nil
+        )
     }
     
     private func hideCopyMenu() {
@@ -256,6 +263,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     @objc private func resetHighlight() {
         self.textStorage.removeAttribute(.backgroundColor, range: NSRange(location: 0, length: self.textStorage.length))
         self.setNeedsDisplay()
+        NotificationCenter.default.removeObserver(self, name: .UIMenuControllerDidHideMenu, object: nil)
     }
 
     // MARK: - init functions
@@ -264,7 +272,6 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         _customizing = false
         setupLabel()
         self.setupLongPressGesture()
-        self.addCopyMenuObserver()
     }
 
     required public init?(coder aDecoder: NSCoder) {
@@ -272,14 +279,12 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         _customizing = false
         setupLabel()
         self.setupLongPressGesture()
-        self.addCopyMenuObserver()
     }
 
     open override func awakeFromNib() {
         super.awakeFromNib()
         updateTextStorage()
         self.setupLongPressGesture()
-        self.addCopyMenuObserver()
     }
 
     open override func drawText(in rect: CGRect) {
@@ -417,10 +422,6 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         for (type, _) in activeElements {
             activeElements[type]?.removeAll()
         }
-    }
-    
-    private func addCopyMenuObserver() {
-        NotificationCenter.default.addObserver(self, selector: #selector(self.resetHighlight), name: .UIMenuControllerDidHideMenu, object: nil)
     }
 
     fileprivate func textOrigin(inRect rect: CGRect) -> CGPoint {
