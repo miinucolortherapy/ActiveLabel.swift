@@ -80,18 +80,22 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
 
     // MARK: - public methods
     open func handleMentionTap(_ handler: @escaping (String) -> ()) {
+        self.hideCopyMenu()
         mentionTapHandler = handler
     }
 
     open func handleHashtagTap(_ handler: @escaping (String) -> ()) {
+        self.hideCopyMenu()
         hashtagTapHandler = handler
     }
     
     open func handleURLTap(_ handler: @escaping (URL) -> ()) {
+        self.hideCopyMenu()
         urlTapHandler = handler
     }
 
     open func handleCustomTap(for type: ActiveType, handler: @escaping (String) -> ()) {
+        self.hideCopyMenu()
         customTapHandlers[type] = handler
     }
 	
