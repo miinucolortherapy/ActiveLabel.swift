@@ -612,7 +612,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             delegate?.didSelect(username, type: .mention)
             return
         }
-        mentionHandler("@" + username)
+        mentionHandler(username)
     }
 
     fileprivate func didTapHashtag(_ hashtag: String) {
@@ -620,7 +620,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             delegate?.didSelect(hashtag, type: .hashtag)
             return
         }
-        hashtagHandler("#" + hashtag)
+        hashtagHandler(hashtag)
     }
 
     fileprivate func didTapStringURL(_ stringURL: String) {
