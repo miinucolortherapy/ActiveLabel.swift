@@ -19,7 +19,7 @@ struct ActiveBuilder {
         case .url:
             return createElements(from: text, for: type, range: range, filterPredicate: filterPredicate)
         case .custom:
-            return createElements(from: text, for: type, range: range, minLength: 1, filterPredicate: filterPredicate)
+            return createElements(from: text, for: type, range: range, minLength: 0, filterPredicate: filterPredicate)
         }
     }
 
@@ -54,7 +54,7 @@ struct ActiveBuilder {
     private static func createElements(from text: String,
                                             for type: ActiveType,
                                                 range: NSRange,
-                                                minLength: Int = 2,
+                                                minLength: Int = 1,
                                                 filterPredicate: ActiveFilterPredicate?) -> [ElementTuple] {
 
         let matches = RegexParser.getElements(from: text, with: type.pattern, range: range)
