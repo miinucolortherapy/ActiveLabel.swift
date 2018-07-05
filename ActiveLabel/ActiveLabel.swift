@@ -169,7 +169,10 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         case .hashtag(let hashtag):
             link = URL(string: "#" + hashtag)
         case .url(let originalURL, _):
-            link = URL(string: originalURL)
+            guard let encoded = originalURL.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) else {
+                return
+            }
+            link = URL(string: encoded)
         case .custom(_):
             break
         }
@@ -182,13 +185,14 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     private func processLink(_ url: URL, touchPoint: CGPoint) {
         self.delegate?.didLongPressWithURL(url, touchPoint: touchPoint)
         guard self.isCopyLinksEnable,
-            let rect = self.selectedLinkRectangle(link: url.description, touchPoint: touchPoint),
+            let originalLink = url.description.removingPercentEncoding,
+            let rect = self.selectedLinkRectangle(link: originalLink, touchPoint: touchPoint),
             self.lastCopyMenuRect != rect else {
             return
         }
         self.lastCopyMenuRect = rect
         self.showCopyMenu(rect: rect)
-        self.copyLink = url.description
+        self.copyLink = originalLink
     }
     
     private func selectedLinkRectangle(link: String, touchPoint: CGPoint) -> CGRect? {
@@ -628,7 +632,9 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         if !link.contains("://") {
             link = "http://" + link
         }
-        guard let urlHandler = self.urlTapHandler, let url = URL(string: link) else {
+        guard let urlHandler = self.urlTapHandler,
+            let encoded = link.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed),
+            let url = URL(string: encoded) else {
             delegate?.didSelect(stringURL, type: .url)
             return
         }
