@@ -29,6 +29,8 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     open var configureLinkAttribute: ConfigureLinkAttribute?
     
     open var isCopyLinksEnable = false
+    open var underlineStyleForCustomType = false
+    open var underlineStyleForURLType = false
 
     @IBInspectable open var mentionColor: UIColor = .blue {
         didSet { updateTextStorage(parseText: false) }
@@ -451,8 +453,12 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             switch type {
             case .mention: attributes[NSAttributedStringKey.foregroundColor] = mentionColor
             case .hashtag: attributes[NSAttributedStringKey.foregroundColor] = hashtagColor
-            case .url: attributes[NSAttributedStringKey.foregroundColor] = URLColor
-            case .custom: attributes[NSAttributedStringKey.foregroundColor] = customColor[type] ?? defaultCustomColor
+            case .url:
+                attributes[NSAttributedStringKey.foregroundColor] = URLColor
+                attributes[NSAttributedStringKey.underlineStyle] = self.underlineStyleForURLType
+            case .custom:
+                attributes[NSAttributedStringKey.foregroundColor] = customColor[type] ?? defaultCustomColor
+                attributes[NSAttributedStringKey.underlineStyle] = self.underlineStyleForCustomType
             }
             
             if let highlightFont = hightlightFont {
