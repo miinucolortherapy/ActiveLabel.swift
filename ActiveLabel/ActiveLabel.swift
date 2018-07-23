@@ -29,8 +29,6 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     open var configureLinkAttribute: ConfigureLinkAttribute?
     
     open var isCopyLinksEnable = false
-    open var underlineStyleForCustomType = false
-    open var underlineStyleForURLType = false
 
     @IBInspectable open var mentionColor: UIColor = .blue {
         didSet { updateTextStorage(parseText: false) }
@@ -48,6 +46,12 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         didSet { updateTextStorage(parseText: false) }
     }
     @IBInspectable open var URLSelectedColor: UIColor? {
+        didSet { updateTextStorage(parseText: false) }
+    }
+    open var underlineStyle: [ActiveType : Int] = [:] {
+        didSet { updateTextStorage(parseText: false) }
+    }
+    open var selectedUnderlineStyle: [ActiveType : Int] = [:] {
         didSet { updateTextStorage(parseText: false) }
     }
     open var customColor: [ActiveType : UIColor] = [:] {
@@ -370,6 +374,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     // MARK: - private properties
     fileprivate var _customizing: Bool = true
     fileprivate var defaultCustomColor: UIColor = .black
+    private var defaultUnderlineStyle = NSUnderlineStyle.styleNone.rawValue
     
     internal var mentionTapHandler: ((String) -> ())?
     internal var hashtagTapHandler: ((String) -> ())?
@@ -455,11 +460,11 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .hashtag: attributes[NSAttributedStringKey.foregroundColor] = hashtagColor
             case .url:
                 attributes[NSAttributedStringKey.foregroundColor] = URLColor
-                attributes[NSAttributedStringKey.underlineStyle] = self.underlineStyleForURLType
             case .custom:
                 attributes[NSAttributedStringKey.foregroundColor] = customColor[type] ?? defaultCustomColor
-                attributes[NSAttributedStringKey.underlineStyle] = self.underlineStyleForCustomType
             }
+            
+            attributes[.underlineStyle] = underlineStyle[type] ?? defaultUnderlineStyle
             
             if let highlightFont = hightlightFont {
                 attributes[NSAttributedStringKey.font] = highlightFont
@@ -543,6 +548,8 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
                 selectedColor = possibleSelectedColor ?? defaultCustomColor
             }
             attributes[NSAttributedStringKey.foregroundColor] = selectedColor
+            let possibleUnderlineStyle = selectedUnderlineStyle[selectedElement.type] ?? underlineStyle[selectedElement.type]
+            attributes[.underlineStyle] = possibleUnderlineStyle ?? defaultUnderlineStyle
         } else {
             let unselectedColor: UIColor
             switch type {
@@ -552,6 +559,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .custom: unselectedColor = customColor[selectedElement.type] ?? defaultCustomColor
             }
             attributes[NSAttributedStringKey.foregroundColor] = unselectedColor
+            attributes[.underlineStyle] = underlineStyle[selectedElement.type] ?? defaultUnderlineStyle
         }
         
         if let highlightFont = hightlightFont {
