@@ -21,7 +21,6 @@ class ViewController: UIViewController {
         let customType3 = ActiveType.custom(pattern: "\\bsupports\\b") //Looks for "supports"
         let customType4 = ActiveType.preview(pattern: "http(?:s?):\\/\\/(?:www\\.)?youtu(?:be\\.com\\/watch\\?v=|\\.be\\/)([\\w\\-\\_]*)(&(amp;)?‌​[\\w\\?‌​=]*)?", preview: "View Video") //Looks for youtube links
 
-//        label.enabledTypes = [.mention, .hashtag, .url, customType, customType2, customType3, customType4]
         label.enabledTypes.append(customType)
         label.enabledTypes.append(customType2)
         label.enabledTypes.append(customType3)

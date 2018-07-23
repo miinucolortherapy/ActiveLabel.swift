@@ -493,24 +493,21 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         var previewElements: [ElementTuple] = []
         
         for type in enabledTypes {
-            switch type {
-            case .preview(_, let preview):
-                let tuple = ActiveBuilder.createPreviewElements(
-                    type: type,
-                    from: textString,
-                    preview: preview,
-                    range: textRange,
-                    filterPredicate: nil)
-                previewElements = tuple.0
-                let finalText = tuple.1
-                textString = finalText
-                textLength = textString.utf16.count
-                textRange = NSRange(location: 0, length: textLength)
-                activeElements[type] = previewElements
-                break
-            default:
-                break
+            guard case let ActiveType.preview(_, preview) = type else {
+                continue
             }
+            let tuple = ActiveBuilder.createPreviewElements(
+                type: type,
+                from: textString,
+                preview: preview,
+                range: textRange,
+                filterPredicate: nil)
+            previewElements = tuple.0
+            let finalText = tuple.1
+            textString = finalText
+            textLength = textString.utf16.count
+            textRange = NSRange(location: 0, length: textLength)
+            self.activeElements[type] = previewElements
         }
 
         if enabledTypes.contains(.url) {
@@ -522,30 +519,26 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             textRange = NSRange(location: 0, length: textLength)
             activeElements[.url] = urlElements
             
+            // Adjust preview type ranges after trimming urls
             var newPreviewElements: [ElementTuple] = []
             for element in previewElements {
-                let beforeUrls = urlElements.filter { (tuple: ElementTuple) -> Bool in
-                    return tuple.range.location < element.range.location
-                }
-                let trims = beforeUrls.map { (tuple: ElementTuple) -> Int in
+                let beforeUrls = urlElements.filter({ $0.range.location < element.range.location })
+                let trims = beforeUrls.map({ (tuple: ElementTuple) -> Int in
                     if case let ActiveElement.url(original, trimmed) = tuple.element {
                         return original.utf16.count - trimmed.utf16.count
                     }
                     return 0
-                }
+                })
                 let offset = trims.reduce(0, +)
                 let newRange = NSRange(location: element.range.location - offset, length: element.range.length)
                 newPreviewElements.append((newRange, element.element, element.type))
-                activeElements[element.type] = newPreviewElements
+                self.activeElements[element.type] = newPreviewElements
             }
         }
 
         for type in enabledTypes where type != .url {
-            switch type {
-            case .preview:
+            if case ActiveType.preview(_, _) = type {
                 continue
-            default:
-                break
             }
             var filter: ((String) -> Bool)? = nil
             if type == .mention {
