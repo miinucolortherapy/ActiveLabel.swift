@@ -113,7 +113,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             mentionTapHandler = nil
         case .url:
             urlTapHandler = nil
-        case .custom:
+        case .custom, .preview:
             customTapHandlers[type] = nil
         }
     }
@@ -181,6 +181,11 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             link = URL(string: encoded)
         case .custom(_):
             break
+        case .preview(let original, _):
+            guard let encoded = original.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) else {
+                return
+            }
+            link = URL(string: encoded)
         }
         guard let url = link else {
             return
@@ -353,6 +358,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .hashtag(let hashtag): didTapHashtag(hashtag)
             case .url(let originalURL, _): didTapStringURL(originalURL)
             case .custom(let element): didTap(element, for: selectedElement.type)
+            case .preview(let original, _): didTap(original, for: selectedElement.type)
             }
             
             let when = DispatchTime.now() + Double(Int64(0.25 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
@@ -460,7 +466,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .hashtag: attributes[NSAttributedStringKey.foregroundColor] = hashtagColor
             case .url:
                 attributes[NSAttributedStringKey.foregroundColor] = URLColor
-            case .custom:
+            case .custom, .preview:
                 attributes[NSAttributedStringKey.foregroundColor] = customColor[type] ?? defaultCustomColor
             }
             
@@ -485,6 +491,29 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         var textString = attrString.string
         var textLength = textString.utf16.count
         var textRange = NSRange(location: 0, length: textLength)
+        
+        var previewElements: [ElementTuple] = []
+        
+        for type in enabledTypes {
+            switch type {
+            case .preview(_, let preview):
+                let tuple = ActiveBuilder.createPreviewElements(
+                    type: type,
+                    from: textString,
+                    preview: preview,
+                    range: textRange,
+                    filterPredicate: nil)
+                previewElements = tuple.0
+                let finalText = tuple.1
+                textString = finalText
+                textLength = textString.utf16.count
+                textRange = NSRange(location: 0, length: textLength)
+                activeElements[type] = previewElements
+                break
+            default:
+                break
+            }
+        }
 
         if enabledTypes.contains(.url) {
             let tuple = ActiveBuilder.createURLElements(from: textString, range: textRange, maximumLength: urlMaximumLength)
@@ -494,9 +523,32 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             textLength = textString.utf16.count
             textRange = NSRange(location: 0, length: textLength)
             activeElements[.url] = urlElements
+            
+            var newPreviewElements: [ElementTuple] = []
+            for element in previewElements {
+                let beforeUrls = urlElements.filter { (tuple: ElementTuple) -> Bool in
+                    return tuple.range.location < element.range.location
+                }
+                let trims = beforeUrls.map { (tuple: ElementTuple) -> Int in
+                    if case let ActiveElement.url(original, trimmed) = tuple.element {
+                        return original.utf16.count - trimmed.utf16.count
+                    }
+                    return 0
+                }
+                let offset = trims.reduce(0, +)
+                let newRange = NSRange(location: element.range.location - offset, length: element.range.length)
+                newPreviewElements.append((newRange, element.element, element.type))
+                activeElements[element.type] = newPreviewElements
+            }
         }
 
         for type in enabledTypes where type != .url {
+            switch type {
+            case .preview:
+                continue
+            default:
+                break
+            }
             var filter: ((String) -> Bool)? = nil
             if type == .mention {
                 filter = mentionFilterPredicate
@@ -543,7 +595,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .mention: selectedColor = mentionSelectedColor ?? mentionColor
             case .hashtag: selectedColor = hashtagSelectedColor ?? hashtagColor
             case .url: selectedColor = URLSelectedColor ?? URLColor
-            case .custom:
+            case .custom, .preview:
                 let possibleSelectedColor = customSelectedColor[selectedElement.type] ?? customColor[selectedElement.type]
                 selectedColor = possibleSelectedColor ?? defaultCustomColor
             }
@@ -556,7 +608,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .mention: unselectedColor = mentionColor
             case .hashtag: unselectedColor = hashtagColor
             case .url: unselectedColor = URLColor
-            case .custom: unselectedColor = customColor[selectedElement.type] ?? defaultCustomColor
+            case .custom, .preview: unselectedColor = customColor[selectedElement.type] ?? defaultCustomColor
             }
             attributes[NSAttributedStringKey.foregroundColor] = unselectedColor
             attributes[.underlineStyle] = underlineStyle[selectedElement.type] ?? defaultUnderlineStyle
