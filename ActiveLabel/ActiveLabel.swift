@@ -168,42 +168,45 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         guard let element = self.element(at: location) else {
             return
         }
-        var link: URL?
+        var link: String?
+        var url: URL?
         switch element.element {
         case .mention(let userHandle):
-            link = URL(string: "@" + userHandle)
+            link = "@" + userHandle
+            url = URL(string: "@" + userHandle)
         case .hashtag(let hashtag):
-            link = URL(string: "#" + hashtag)
-        case .url(let originalURL, _):
+            link = "#" + hashtag
+            url = URL(string: "#" + hashtag)
+        case .url(let originalURL, let trimmed):
             guard let encoded = originalURL.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) else {
                 return
             }
-            link = URL(string: encoded)
+            link = trimmed
+            url = URL(string: encoded)
         case .custom(_):
             break
-        case .preview(let original, _):
+        case .preview(let original, let preview):
             guard let encoded = original.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) else {
                 return
             }
-            link = URL(string: encoded)
+            link = preview
+            url = URL(string: encoded)
         }
-        guard let url = link else {
-            return
+        if let linkUrl = url, let linkString = link {
+            self.process(link: linkString, url: linkUrl, touchPoint: location)
         }
-        self.processLink(url, touchPoint: location)
     }
 
-    private func processLink(_ url: URL, touchPoint: CGPoint) {
+    private func process(link: String, url: URL, touchPoint: CGPoint) {
         self.delegate?.didLongPressWithURL(url, touchPoint: touchPoint)
         guard self.isCopyLinksEnable,
-            let originalLink = url.description.removingPercentEncoding,
-            let rect = self.selectedLinkRectangle(link: originalLink, touchPoint: touchPoint),
+            let rect = self.selectedLinkRectangle(link: link, touchPoint: touchPoint),
             self.lastCopyMenuRect != rect else {
             return
         }
         self.lastCopyMenuRect = rect
         self.showCopyMenu(rect: rect)
-        self.copyLink = originalLink
+        self.copyLink = url.description.removingPercentEncoding
     }
     
     private func selectedLinkRectangle(link: String, touchPoint: CGPoint) -> CGRect? {
@@ -224,17 +227,12 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     }
     
     private func linkRanges(text: String, link: String) -> [Range<String.Index>] {
-        var correctLink = link
-        if let maxLength = self.urlMaximumLength,
-            correctLink.count > maxLength {
-            correctLink = correctLink.trim(to: maxLength)
-        }
-        var linkRanges = text.ranges(of: correctLink)
-        guard let range = correctLink.range(of: "://") else {
+        var linkRanges = text.ranges(of: link)
+        guard let range = link.range(of: "://") else {
             return linkRanges
         }
-        let linkRange = range.upperBound..<correctLink.endIndex
-        let clippedLink = String(correctLink[linkRange])
+        let linkRange = range.upperBound..<link.endIndex
+        let clippedLink = String(link[linkRange])
         let clippedLinkRanges = text.ranges(of: clippedLink)
         for clippedLinkRange in clippedLinkRanges {
             linkRanges.append(clippedLinkRange)
