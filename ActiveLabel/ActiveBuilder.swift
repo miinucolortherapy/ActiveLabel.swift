@@ -20,6 +20,8 @@ struct ActiveBuilder {
             return createElements(from: text, for: type, range: range, filterPredicate: filterPredicate)
         case .custom:
             return createElements(from: text, for: type, range: range, minLength: 0, filterPredicate: filterPredicate)
+        case .preview:
+            return createElements(from: text, for: type, range: range, filterPredicate: filterPredicate)
         }
     }
 
@@ -32,7 +34,7 @@ struct ActiveBuilder {
 
         for match in matches where match.range.length > 2 {
             let word = nsstring.substring(with: match.range)
-                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
 
             guard let maxLength = maximumLength, word.count > maxLength else {
                 let range = maximumLength == nil ? match.range : (text as NSString).range(of: word)
@@ -50,6 +52,36 @@ struct ActiveBuilder {
         }
         return (elements, text)
     }
+    
+    static func createPreviewElements(type: ActiveType,
+                                     from text: String,
+                                     preview: String?,
+                                     range: NSRange,
+                                     filterPredicate: ActiveFilterPredicate?) -> ([ElementTuple], String) {
+        
+        var text = text
+        let matches = RegexParser.getElements(from: text, with: type.pattern, range: range)
+        let nsstring = text as NSString
+        var elements: [ElementTuple] = []
+        
+        for match in matches where match.range.length > 1 {
+            let word = nsstring.substring(with: match.range)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if filterPredicate?(word) ?? true {
+                guard let preview = preview else {
+                    let element = ActiveElement.create(with: type, text: word)
+                    elements.append((match.range, element, type))
+                    continue
+                }
+                
+                text = text.replacingOccurrences(of: word, with: preview)
+                let newRange = (text as NSString).range(of: preview)
+                let element = ActiveElement.preview(original: word, preview: preview)
+                elements.append((newRange, element, type))
+            }
+        }
+        return (elements, text)
+    }
 
     private static func createElements(from text: String,
                                             for type: ActiveType,
@@ -63,7 +95,7 @@ struct ActiveBuilder {
 
         for match in matches where match.range.length > minLength {
             let word = nsstring.substring(with: match.range)
-                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             if filterPredicate?(word) ?? true {
                 let element = ActiveElement.create(with: type, text: word)
                 elements.append((match.range, element, type))
