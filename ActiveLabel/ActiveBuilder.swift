@@ -74,10 +74,14 @@ struct ActiveBuilder {
                     continue
                 }
                 
-                text = text.replacingOccurrences(of: word, with: preview)
-                let newRange = (text as NSString).range(of: preview)
-                let element = ActiveElement.preview(original: word, preview: preview)
-                elements.append((newRange, element, type))
+                if let searchRange = text.range(of: word) {
+                    text = text.replacingOccurrences(of: word, with: preview, range: searchRange)
+                    let previewLength = preview.distance(from: preview.startIndex, to: preview.endIndex)
+                    let previewRange = searchRange.lowerBound..<text.index(searchRange.lowerBound, offsetBy: previewLength)
+                    let newRange = NSRange(previewRange, in: text)
+                    let element = ActiveElement.preview(original: word, preview: preview)
+                    elements.append((newRange, element, type))
+                }
             }
         }
         return (elements, text)
