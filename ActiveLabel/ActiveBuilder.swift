@@ -34,7 +34,7 @@ struct ActiveBuilder {
 
         for match in matches where match.range.length > 2 {
             let word = nsstring.substring(with: match.range)
-                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
 
             guard let maxLength = maximumLength, word.count > maxLength else {
                 let range = maximumLength == nil ? match.range : (text as NSString).range(of: word)
@@ -66,7 +66,7 @@ struct ActiveBuilder {
         
         for match in matches where match.range.length > 1 {
             let word = nsstring.substring(with: match.range)
-                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             if filterPredicate?(word) ?? true {
                 guard let preview = preview else {
                     let element = ActiveElement.create(with: type, text: word)
@@ -95,7 +95,7 @@ struct ActiveBuilder {
 
         for match in matches where match.range.length > minLength {
             let word = nsstring.substring(with: match.range)
-                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             if filterPredicate?(word) ?? true {
                 let element = ActiveElement.create(with: type, text: word)
                 elements.append((match.range, element, type))

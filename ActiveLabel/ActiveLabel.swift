@@ -48,10 +48,10 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     @IBInspectable open var URLSelectedColor: UIColor? {
         didSet { updateTextStorage(parseText: false) }
     }
-    open var underlineStyle: [ActiveType : Int] = [:] {
+    open var underlineStyle: [ActiveType: Int] = [:] {
         didSet { updateTextStorage(parseText: false) }
     }
-    open var selectedUnderlineStyle: [ActiveType : Int] = [:] {
+    open var selectedUnderlineStyle: [ActiveType: Int] = [:] {
         didSet { updateTextStorage(parseText: false) }
     }
     open var customColor: [ActiveType : UIColor] = [:] {
@@ -173,10 +173,10 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         switch element.element {
         case .mention(let userHandle):
             link = "@" + userHandle
-            url = URL(string: "@" + userHandle)
+            url = URL(string: link!)
         case .hashtag(let hashtag):
             link = "#" + hashtag
-            url = URL(string: "#" + hashtag)
+            url = URL(string: link!)
         case .url(let originalURL, let trimmed):
             guard let encoded = originalURL.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) else {
                 return
