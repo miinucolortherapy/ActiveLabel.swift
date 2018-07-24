@@ -17,8 +17,8 @@ class ViewController: UIViewController {
         super.viewDidLoad()
 
         let customType = ActiveType.custom(pattern: "are also\\b") //Looks for "are"
-        let customType2 = ActiveType.custom(pattern: "\\sit\\b") //Looks for "it"
-        let customType3 = ActiveType.custom(pattern: "\\ssupports\\b") //Looks for "supports"
+        let customType2 = ActiveType.custom(pattern: "\\bit\\b") //Looks for "it"
+        let customType3 = ActiveType.custom(pattern: "\\bsupports\\b") //Looks for "supports"
 
         label.enabledTypes.append(customType)
         label.enabledTypes.append(customType2)
@@ -32,7 +32,6 @@ class ViewController: UIViewController {
                 "Let's trim a long link: \nhttps://twitter.com/twicket_app/status/649678392372121601"
             label.numberOfLines = 0
             label.lineSpacing = 4
-            label.underlineStyleForCustomType = true
             label.textColor = UIColor(red: 102.0/255, green: 117.0/255, blue: 127.0/255, alpha: 1)
             label.hashtagColor = UIColor(red: 85.0/255, green: 172.0/255, blue: 238.0/255, alpha: 1)
             label.mentionColor = UIColor(red: 238.0/255, green: 85.0/255, blue: 96.0/255, alpha: 1)
@@ -45,11 +44,12 @@ class ViewController: UIViewController {
             
             label.isCopyLinksEnable = true
             //Custom types
-
+            label.underlineStyle[customType] = NSUnderlineStyle.styleSingle.rawValue
             label.customColor[customType] = UIColor.purple
             label.customSelectedColor[customType] = UIColor.green
             label.customColor[customType2] = UIColor.magenta
             label.customSelectedColor[customType2] = UIColor.green
+            label.underlineStyle[customType3] = NSUnderlineStyle.patternDot.rawValue | NSUnderlineStyle.styleSingle.rawValue
             
             label.configureLinkAttribute = { (type, attributes, isSelected) in
                 var atts = attributes
