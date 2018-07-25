@@ -16,7 +16,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let customType = ActiveType.custom(pattern: "are also\\b") //Looks for "are"
+        let customType = ActiveType.custom(pattern: "are also\\b") //Looks for "are also"
         let customType2 = ActiveType.custom(pattern: "\\bit\\b") //Looks for "it"
         let customType3 = ActiveType.custom(pattern: "\\bsupports\\b") //Looks for "supports"
         let customType4 = ActiveType.preview(pattern: "http(?:s?):\\/\\/(?:www\\.)?youtu(?:be\\.com\\/watch\\?v=|\\.be\\/)([\\w\\-\\_]*)(&(amp;)?‌​[\\w\\?‌​=]*)?", preview: "View Video") //Looks for youtube links
@@ -29,9 +29,17 @@ class ViewController: UIViewController {
         label.urlMaximumLength = 31
 
         label.customize { label in
-            label.text = "This is a 🚂 post with #multiple #hashtags and 😱 a @userhandle. Links are also google.com supported like" +
-            " this one: HTTPS://optonaut.co. Now it also supports custom patterns -> are\n\n" +
-                "Let's trim a long link: \nhttps://twitter.com/twicket_app/status/649678392372121601\nhttp://youtu.be/iwGFalTRHDA"
+            label.text = """
+            This is a 🚂 post with #multiple #hashtags and 😱 a @userhandle. \
+            Links are also google.com supported like this one: HTTPS://optonaut.co. \
+            Links are also google.com supported like this one: HTTPS://optonaut.co. \
+            Now it also supports custom patterns -> are\n\nLet's trim a long link: \n\
+            https://twitter.com/twicket_app/status/649678392372121601\n\
+            https://twitter.com/twicket_app/status/649678392372121601\n\
+            Video 1: http://youtu.be/iwGFalTRHDA\n\
+            Video 2: http://youtu.be/iwGFalTRHDA\n\
+            Video 3: http://youtu.be/iwGFalTRHDA
+            """
             label.numberOfLines = 0
             label.lineSpacing = 4
             label.textColor = UIColor(red: 102.0/255, green: 117.0/255, blue: 127.0/255, alpha: 1)
@@ -75,7 +83,7 @@ class ViewController: UIViewController {
             label.handleCustomTap(for: customType4) { self.alert("Youtube link", message: $0) }
         }
 
-        label.frame = CGRect(x: 20, y: 40, width: view.frame.width - 40, height: 300)
+        label.frame = CGRect(x: 20, y: 40, width: view.frame.width - 40, height: 400)
         view.addSubview(label)
         
         

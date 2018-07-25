@@ -32,23 +32,31 @@ struct ActiveBuilder {
         let nsstring = text as NSString
         var elements: [ElementTuple] = []
 
+        var activeRange = text.startIndex..<text.endIndex
         for match in matches where match.range.length > 2 {
             let word = nsstring.substring(with: match.range)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
 
             guard let maxLength = maximumLength, word.count > maxLength else {
-                let range = maximumLength == nil ? match.range : (text as NSString).range(of: word)
-                let element = ActiveElement.create(with: type, text: word)
-                elements.append((range, element, type))
+                if let wordRange = text.range(of: word, range: activeRange) {
+                    activeRange = wordRange.upperBound..<activeRange.upperBound
+                    let range = maximumLength == nil ? match.range : NSRange(wordRange, in: text)
+                    let element = ActiveElement.create(with: type, text: word)
+                    elements.append((range, element, type))
+                }
                 continue
             }
 
             let trimmedWord = word.trim(to: maxLength)
             text = text.replacingOccurrences(of: word, with: trimmedWord)
-
-            let newRange = (text as NSString).range(of: trimmedWord)
-            let element = ActiveElement.url(original: word, trimmed: trimmedWord)
-            elements.append((newRange, element, type))
+            activeRange = activeRange.lowerBound..<text.endIndex
+            
+            if let wordRange = text.range(of: trimmedWord, range: activeRange) {
+                activeRange = wordRange.upperBound..<activeRange.upperBound
+                let range = NSRange(wordRange, in: text)
+                let element = ActiveElement.url(original: word, trimmed: trimmedWord)
+                elements.append((range, element, type))
+            }
         }
         return (elements, text)
     }
