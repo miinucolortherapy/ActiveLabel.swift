@@ -25,6 +25,7 @@ class ActiveTypeTests: XCTestCase {
     
     let label = ActiveLabel()
     let customEmptyType = ActiveType.custom(pattern: "")
+    let previewEmptyType = ActiveType.preview(pattern: "", preview: "")
     
     var activeElements: [ActiveElement] {
         return label.activeElements.flatMap({$0.1.flatMap({$0.element})})
@@ -37,6 +38,7 @@ class ActiveTypeTests: XCTestCase {
         case .hashtag(let hashtag): return hashtag
         case .url(let url, _): return url
         case .custom(let element): return element
+        case .preview(let original, _): return original
         }
     }
     
@@ -46,7 +48,8 @@ class ActiveTypeTests: XCTestCase {
         case .mention: return .mention
         case .hashtag: return .hashtag
         case .url: return .url
-        case .custom: return customEmptyType
+        case .custom: return self.customEmptyType
+        case .preview: return self.previewEmptyType
         }
     }
     
@@ -197,7 +200,7 @@ class ActiveTypeTests: XCTestCase {
         XCTAssertEqual(currentElementType, ActiveType.url)
 
         label.text = "google.com"
-        XCTAssertEqual(activeElements.count, 0)
+        XCTAssertEqual(activeElements.count, 1)
     }
 
     func testCustomType() {
