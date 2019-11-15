@@ -327,7 +327,9 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     // MARK: - Auto layout
 
     open override var intrinsicContentSize: CGSize {
-        return super.intrinsicContentSize
+        textContainer.size = CGSize(width: self.preferredMaxLayoutWidth, height: CGFloat.greatestFiniteMagnitude)
+        let size = layoutManager.usedRect(for: textContainer)
+        return CGSize(width: ceil(size.width), height: ceil(size.height))
     }
 
     // MARK: - touch events
