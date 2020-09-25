@@ -337,7 +337,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         let location = touch.location(in: self)
         var avoidSuperCall = false
         switch touch.phase {
-        case .began, .moved:
+        case .began, .moved, .regionEntered, .regionMoved:
             if let element = element(at: location) {
                 if element.range.location != selectedElement?.range.location || element.range.length != selectedElement?.range.length {
                     updateAttributesWhenSelected(false)
@@ -350,7 +350,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
                 selectedElement = nil
             }
             self.hideCopyMenu()
-        case .ended:
+        case .ended, .regionExited:
             guard let selectedElement = selectedElement else { return avoidSuperCall }
 
             switch selectedElement.element {
